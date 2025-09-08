@@ -3,72 +3,652 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>모던한 홈페이지</title>
-    <!-- Tailwind CSS 스크립트 -->
+    <title>꿈나무 도서관</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font for a playful look -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
-        
         body {
-            font-family: 'Pretendard', sans-serif;
+            font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
         }
-
-        .fade-in {
-            animation: fadeIn 1s ease-in-out;
+        .drawing-canvas {
+            border: 2px solid #ccc;
+            cursor: crosshair;
+            touch-action: none;
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        .sticker-img {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .sticker-img:hover {
+            transform: scale(1.1);
+        }
+        .tooltip {
+            visibility: hidden;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 10px;
+            position: absolute;
+            z-index: 10;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+        .has-tooltip:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        .book-card {
+            cursor: pointer;
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            border: 2px solid transparent;
+        }
+        .book-card:hover {
+            transform: scale(1.05) translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1), 0 0 0 4px rgba(255, 255, 255, 0.5);
+        }
+        .news-card {
+            cursor: pointer;
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .news-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+        .btn-fancy {
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .btn-fancy:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+        }
+        /* AI-era style changes */
+        .ai-header-bg {
+            background: linear-gradient(90deg, #1e3a8a, #4f46e5, #9333ea);
+        }
+        .ai-header-title {
+            text-shadow: 0 0 10px #ffffff, 0 0 20px #818cf8;
+        }
+        .ai-card-glow:hover {
+            box-shadow: 0 0 15px rgba(129, 140, 248, 0.5);
+            border-color: #818cf8;
+        }
+        .ai-btn-glow {
+            box-shadow: 0 0 10px rgba(100, 100, 200, 0.5);
+        }
+        .ai-btn-glow:hover {
+            box-shadow: 0 0 20px rgba(100, 100, 200, 0.8);
         }
     </style>
+    <!-- Three.js CDN for 3D graphics -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
-<body class="bg-slate-50 flex items-center justify-center min-h-screen p-4">
-    <div class="bg-white p-12 rounded-[2rem] shadow-2xl max-w-3xl w-full text-center fade-in">
-        <h1 class="text-5xl font-bold text-slate-800 mb-4 tracking-tight">환영합니다!</h1>
-        <p class="text-xl text-slate-600 mb-8 leading-relaxed">
-            새로운 디자인으로 업데이트된 모던한 웹페이지입니다.
-            더욱 부드럽고 세련된 느낌을 느껴보세요.
-        </p>
-        
-        <!-- 카드 섹션 -->
-        <div class="grid md:grid-cols-2 gap-8 mb-8">
-            <div class="bg-slate-50 p-6 rounded-2xl shadow-inner transition-transform duration-300 hover:scale-[1.02]">
-                <h3 class="text-2xl font-semibold text-slate-700 mb-2">세련된 디자인</h3>
-                <p class="text-slate-500">부드러운 색상 팔레트와 폰트를 적용하여 편안한 시각 경험을 제공합니다.</p>
-            </div>
-            <div class="bg-slate-50 p-6 rounded-2xl shadow-inner transition-transform duration-300 hover:scale-[1.02]">
-                <h3 class="text-2xl font-semibold text-slate-700 mb-2">반응형 레이아웃</h3>
-                <p class="text-slate-500">모든 기기에서 최적의 화면을 볼 수 있도록 디자인되었습니다.</p>
-            </div>
+<body class="bg-slate-900 text-gray-200">
+
+    <!-- Header with a new gradient background and icon -->
+    <header class="ai-header-bg shadow-xl py-4 px-8 flex items-center gap-4">
+        <h1 class="text-3xl font-bold text-white flex items-center gap-2 ai-header-title">
+            <!-- New book icon as an inline SVG -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-book">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V6a2 2 0 0 0-2-2H6.5A2.5 2.5 0 0 0 4 6.5v13z"/>
+                <path d="M12 21.5V17"/>
+                <path d="M12 17h8.5"/>
+                <path d="M4 19.5a2.5 2.5 0 0 0 2.5 2.5h14.5"/>
+            </svg>
+            꿈나무 도서관
+        </h1>
+    </header>
+
+    <main class="p-8">
+        <!-- Main Page Section -->
+        <div id="main-page" class="space-y-16">
+            <section class="relative text-center py-20 px-4 rounded-2xl overflow-hidden bg-gradient-to-r from-violet-900 to-fuchsia-900 shadow-lg">
+                <!-- 3D Canvas Container -->
+                <div id="hero-canvas-container" class="absolute inset-0"></div>
+                
+                <!-- New static shapes for the hero section -->
+                <div class="absolute inset-0 z-0">
+                    <svg class="absolute w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:rgba(129, 140, 248, 0.2);stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:rgba(232, 121, 249, 0.4);stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <!-- Geometric shapes -->
+                        <rect x="5%" y="15%" width="20" height="20" rx="4" fill="url(#g1)" opacity="0.8"/>
+                        <circle cx="25%" cy="80%" r="5" fill="url(#g1)" opacity="0.6"/>
+                        <polygon points="70,30 80,45 60,45" fill="url(#g1)" opacity="0.7"/>
+                        <rect x="80%" y="55%" width="15" height="15" rx="3" fill="url(#g1)" opacity="0.9"/>
+                    </svg>
+                </div>
+                
+                <div class="relative z-10">
+                    <h2 class="text-5xl font-extrabold text-white mb-4">꿈과 이야기가 자라는 곳</h2>
+                    <p class="text-xl text-white/90 mb-8">AI와 함께 새로운 상상을 시작해 보세요.</p>
+                    <div class="w-full max-w-xl mx-auto">
+                        <div class="flex items-center bg-white/10 backdrop-blur-sm p-2 rounded-full shadow-xl ring-2 ring-white/50 ai-card-glow">
+                            <input id="search-input" type="text" placeholder="어떤 책을 찾아볼까요? 예: '구름빵'" class="w-full bg-transparent px-4 py-2 text-white focus:outline-none placeholder-gray-300"/>
+                            <button onclick="searchBook()" class="bg-fuchsia-600 text-white rounded-full px-6 py-3 ml-2 hover:bg-fuchsia-700 transition-all duration-300 transform hover:scale-105 flex items-center gap-2 font-bold ai-btn-glow">
+                                <span>📚</span><span>검색</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2 class="text-3xl font-bold text-center mb-8 text-white">이달의 추천 도서</h2>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+                    <!-- Enhanced book card designs -->
+                    <div class="text-center book-card rounded-lg bg-gray-800 text-gray-200 ai-card-glow" onclick="showBookDetails('구름빵', '백희나', 'bg-sky-500', '하늘을 나는 신비한 구름빵 이야기! 아이들의 상상력을 자극하는 따뜻한 그림책입니다.')">
+                        <div class="w-full h-56 rounded-lg shadow-lg flex items-center justify-center bg-sky-500 text-white text-3xl font-bold">구름빵</div>
+                        <h3 class="mt-4 font-semibold text-lg">구름빵</h3>
+                        <p class="text-gray-400 text-sm">백희나</p>
+                    </div>
+                    <div class="text-center book-card rounded-lg bg-gray-800 text-gray-200 ai-card-glow" onclick="showBookDetails('알사탕', '백희나', 'bg-rose-500', '외톨이 동동이에게 특별한 친구들을 만들어주는 신비한 알사탕 이야기. 마음의 소리를 들려주는 따뜻한 그림책입니다.')">
+                        <div class="w-full h-56 rounded-lg shadow-lg flex items-center justify-center bg-rose-500 text-white text-3xl font-bold">알사탕</div>
+                        <h3 class="mt-4 font-semibold text-lg">알사탕</h3>
+                        <p class="text-gray-400 text-sm">백희나</p>
+                    </div>
+                    <div class="text-center book-card rounded-lg bg-gray-800 text-gray-200 ai-card-glow" onclick="showBookDetails('달 샤베트', '백희나', 'bg-amber-500', '더운 여름, 녹아내린 달을 모아 만든 달콤한 샤베트 이야기. 지구 온난화에 대한 메시지를 담고 있는 상상력 넘치는 그림책입니다.')">
+                        <div class="w-full h-56 rounded-lg shadow-lg flex items-center justify-center bg-amber-500 text-white text-3xl font-bold">달 샤베트</div>
+                        <h3 class="mt-4 font-semibold text-lg">달 샤베트</h3>
+                        <p class="text-gray-400 text-sm">백희나</p>
+                    </div>
+                    <div class="text-center book-card rounded-lg bg-gray-800 text-gray-200 ai-card-glow" onclick="showBookDetails('연이와 버들 도령', '미디어창비', 'bg-teal-500', '한국의 전래동화를 바탕으로 한 아름다운 사랑 이야기. 섬세한 그림과 감동적인 스토리가 돋보이는 그림책입니다.')">
+                        <div class="w-full h-56 rounded-lg shadow-lg flex items-center justify-center bg-teal-500 text-white text-3xl font-bold">연이와 버들 도령</div>
+                        <h3 class="mt-4 font-semibold text-lg">연이와 버들 도령</h3>
+                        <p class="text-gray-400 text-sm">미디어창비</p>
+                    </div>
+                    <div class="text-center book-card rounded-lg bg-gray-800 text-gray-200 ai-card-glow" onclick="showBookDetails('팥죽 할머니와 호랑이', '사계절', 'bg-indigo-500', '꾀 많은 할머니와 어수룩한 호랑이의 흥미진진한 대결 이야기. 아이들에게 교훈을 주는 전통 그림책입니다.')">
+                        <div class="w-full h-56 rounded-lg shadow-lg flex items-center justify-center bg-indigo-500 text-white text-3xl font-bold">팥죽 할머니와 호랑이</div>
+                        <h3 class="mt-4 font-semibold text-lg">팥죽 할머니와 호랑이</h3>
+                        <p class="text-gray-400 text-sm">사계절</p>
+                    </div>
+                    <div class="text-center book-card rounded-lg bg-gray-800 text-gray-200 ai-card-glow" onclick="showBookDetails('강아지똥', '권정생', 'bg-orange-500', '세상의 가장 하찮은 존재도 소중한 의미가 있다는 것을 알려주는 따뜻한 이야기. 많은 사람들에게 사랑받는 동화입니다.')">
+                        <div class="w-full h-56 rounded-lg shadow-lg flex items-center justify-center bg-orange-500 text-white text-3xl font-bold">강아지똥</div>
+                        <h3 class="mt-4 font-semibold text-lg">강아지똥</h3>
+                        <p class="text-gray-400 text-sm">권정생</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="bg-gray-800 p-8 rounded-2xl shadow-lg">
+                <h2 class="text-3xl font-bold text-center mb-8 text-white">도서관 소식</h2>
+                <div class="max-w-2xl mx-auto">
+                    <!-- Enhanced news card designs -->
+                    <div class="bg-gray-900 p-6 rounded-lg shadow-md mb-4 news-card" data-title="[공지] 9월 독서의 달 행사 안내" data-date="2025-09-08" data-content="9월 한 달간, '책과 함께 떠나는 상상 여행'을 주제로 다양한 온라인 행사가 진행됩니다. 독서 챌린지, 작가와의 만남, 온라인 퀴즈 이벤트 등 다채로운 프로그램이 준비되어 있으니 아이들과 함께 많은 참여 바랍니다.">
+                        <h3 class="font-bold text-xl text-teal-400 mb-2">[공지] 9월 독서의 달 행사 안내</h3>
+                        <p class="text-gray-300">9월 한 달간, '책과 함께 떠나는 상상 여행'을 주제로 다양한 온라인 행사가 진행됩니다. 많은 참여 바랍니다.</p>
+                        <span class="text-sm text-gray-500 mt-2 block">2025-09-08</span>
+                    </div>
+                    <div class="bg-gray-900 p-6 rounded-lg shadow-md news-card" data-title="[이벤트] '나만의 책갈피 만들기' 워크숍" data-date="2025-09-06" data-content="매주 토요일 오후 2시, 어린이 자료실에서 '나만의 책갈피 만들기' 워크숍이 열립니다. 나만의 개성을 담은 멋진 책갈피를 만들 수 있는 절호의 기회! 선착순 10명까지 참여 가능하니 서둘러 신청하세요!">
+                        <h3 class="font-bold text-xl text-teal-400 mb-2">[이벤트] '나만의 책갈피 만들기' 워크숍</h3>
+                        <p class="text-gray-300">매주 토요일 오후 2시, 어린이 자료실에서 나만의 책갈피 만들기 워크숍이 열립니다. 선착순 10명까지 참여 가능합니다.</p>
+                        <span class="text-sm text-gray-500 mt-2 block">2025-09-06</span>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Link to the sub-page -->
+            <section class="text-center">
+                <button onclick="showPage('story-creator-page')" class="btn-fancy bg-purple-600 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-purple-700 ai-btn-glow">
+                    ✨ 나만의 이야기 만들러 가기! ✨
+                </button>
+            </section>
         </div>
 
-        <button id="ctaButton" class="bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-4 px-8 rounded-full shadow-lg transition-transform duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300">
-            시작하기
-        </button>
-        
-        <div id="messageContainer" class="mt-8 p-6 bg-blue-50 text-blue-800 rounded-xl hidden fade-in">
-            <p class="font-semibold text-lg">새로운 여정이 시작됩니다!</p>
+        <!-- Sub-page Section: Story Creator -->
+        <div id="story-creator-page" class="space-y-10 hidden">
+            <!-- Back button -->
+            <button onclick="showPage('main-page')" class="btn-fancy bg-gray-700 text-white font-bold py-2 px-4 rounded-full hover:bg-gray-600">
+                <-- 메인으로 돌아가기
+            </button>
+
+            <!-- Main Section with a playful title -->
+            <section class="relative text-center py-10 px-4 rounded-2xl overflow-hidden bg-gradient-to-r from-rose-400 to-purple-500 shadow-lg">
+                <h2 class="text-4xl font-extrabold text-white mb-4">나만의 이야기 만들기</h2>
+                <p class="text-lg text-white/90 mb-8">색칠하고 스티커를 붙여서 멋진 이야기를 만들어봐!</p>
+            </section>
+
+            <!-- Creative Canvas and Controls -->
+            <section class="bg-gray-900 p-6 rounded-2xl shadow-xl border border-pink-200">
+                <div class="flex flex-col lg:flex-row gap-6">
+                    <!-- Control Panel -->
+                    <div class="lg:w-1/4 flex flex-col gap-6 p-4 bg-gray-800 rounded-xl shadow-inner border border-purple-200">
+                        <!-- Drawing Tools -->
+                        <div>
+                            <h3 class="font-bold text-xl text-white mb-4">그리기 도구</h3>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <div class="has-tooltip relative">
+                                    <button onclick="changeColor('#ec4899')" class="w-10 h-10 bg-pink-500 rounded-full border-2 border-transparent hover:border-pink-500 transition-all duration-200"></button>
+                                    <span class="tooltip">장미</span>
+                                </div>
+                                <div class="has-tooltip relative">
+                                    <button onclick="changeColor('#f97316')" class="w-10 h-10 bg-orange-500 rounded-full border-2 border-transparent hover:border-pink-500 transition-all duration-200"></button>
+                                    <span class="tooltip">주황</span>
+                                </div>
+                                <div class="has-tooltip relative">
+                                    <button onclick="changeColor('#22d3ee')" class="w-10 h-10 bg-cyan-400 rounded-full border-2 border-transparent hover:border-pink-500 transition-all duration-200"></button>
+                                    <span class="tooltip">청록</span>
+                                </div>
+                                <div class="has-tooltip relative">
+                                    <button onclick="changeColor('#8b5cf6')" class="w-10 h-10 bg-violet-500 rounded-full border-2 border-transparent hover:border-pink-500 transition-all duration-200"></button>
+                                    <span class="tooltip">보라</span>
+                                </div>
+                                <div class="has-tooltip relative">
+                                    <button onclick="changeColor('#FFFFFF')" class="w-10 h-10 bg-white rounded-full border-2 border-transparent hover:border-pink-500 transition-all duration-200"></button>
+                                    <span class="tooltip">지우개</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <label for="brushSize" class="text-gray-400 font-semibold">펜 굵기:</label>
+                                <input type="range" id="brushSize" min="1" max="20" value="5" class="w-full accent-purple-500">
+                            </div>
+                        </div>
+
+                        <!-- Sticker Section -->
+                        <div>
+                            <h3 class="font-bold text-xl text-white mb-4">스티커</h3>
+                            <div class="grid grid-cols-3 gap-4">
+                                <img src="https://api.iconify.design/twemoji:sparkles.svg" alt="Sparkles sticker" class="sticker-img w-12 h-12" onclick="addSticker(this)">
+                                <img src="https://api.iconify.design/twemoji:rainbow.svg" alt="Rainbow sticker" class="sticker-img w-12 h-12" onclick="addSticker(this)">
+                                <img src="https://api.iconify.design/twemoji:star-struck.svg" alt="Star struck sticker" class="sticker-img w-12 h-12" onclick="addSticker(this)">
+                                <img src="https://api.iconify.design/twemoji:rocket.svg" alt="Rocket sticker" class="sticker-img w-12 h-12" onclick="addSticker(this)">
+                                <img src="https://api.iconify.design/twemoji:unicorn.svg" alt="Unicorn sticker" class="sticker-img w-12 h-12" onclick="addSticker(this)">
+                                <img src="https://api.iconify.design/twemoji:frog.svg" alt="Frog sticker" class="sticker-img w-12 h-12" onclick="addSticker(this)">
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="mt-auto flex flex-col gap-4">
+                            <button onclick="clearCanvas()" class="btn-fancy bg-rose-600 text-white font-bold py-3 px-6 rounded-full hover:bg-rose-700 ai-btn-glow">전체 지우기</button>
+                            <button onclick="saveImage()" class="btn-fancy bg-blue-600 text-white font-bold py-3 px-6 rounded-full hover:bg-blue-700 ai-btn-glow">내 이야기 저장하기</button>
+                        </div>
+                    </div>
+
+                    <!-- Canvas Area -->
+                    <div class="lg:w-3/4 bg-slate-950 rounded-xl shadow-lg border border-fuchsia-300 relative">
+                        <canvas id="drawingCanvas" class="drawing-canvas w-full h-full min-h-[500px]"></canvas>
+                        <div id="sticker-container" class="absolute inset-0"></div>
+                    </div>
+                </div>
+            </section>
         </div>
-    </div>
+
+        <!-- Sub-page Section: Book Details -->
+        <div id="book-details-page" class="space-y-10 hidden">
+            <!-- Back button -->
+            <button onclick="showPage('main-page')" class="btn-fancy bg-gray-700 text-white font-bold py-2 px-4 rounded-full hover:bg-gray-600">
+                <-- 목록으로 돌아가기
+            </button>
+
+            <section class="bg-gray-800 p-8 rounded-2xl shadow-xl">
+                <div class="flex flex-col lg:flex-row items-center lg:items-start gap-8">
+                    <div id="book-image-container" class="w-full lg:w-1/3 flex-shrink-0">
+                        <div id="book-image" class="w-full h-80 rounded-lg shadow-lg flex items-center justify-center text-white text-3xl font-bold"></div>
+                    </div>
+                    <div class="w-full lg:w-2/3">
+                        <h2 id="book-title" class="text-4xl font-extrabold text-indigo-400 mb-2"></h2>
+                        <p id="book-author" class="text-xl font-semibold text-gray-400 mb-6"></p>
+                        <p id="book-description" class="text-gray-300 leading-relaxed"></p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Sub-page Section: News Details -->
+        <div id="news-details-page" class="space-y-10 hidden">
+            <!-- Back button -->
+            <button onclick="showPage('main-page')" class="btn-fancy bg-gray-700 text-white font-bold py-2 px-4 rounded-full hover:bg-gray-600">
+                <-- 목록으로 돌아가기
+            </button>
+
+            <section class="bg-gray-800 p-8 rounded-2xl shadow-xl">
+                <h2 id="news-title" class="text-4xl font-extrabold text-teal-400 mb-2"></h2>
+                <p id="news-date" class="text-lg text-gray-500 mb-6"></p>
+                <p id="news-content" class="text-gray-300 leading-relaxed"></p>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer consistent with the main page -->
+    <footer class="text-center py-4 mt-8 bg-slate-950 text-sm text-gray-500">
+        <p>© 2025 꿈나무 도서관. All Rights Reserved.</p>
+    </footer>
 
     <script>
+        // Page navigation logic
+        const mainPage = document.getElementById('main-page');
+        const storyCreatorPage = document.getElementById('story-creator-page');
+        const bookDetailsPage = document.getElementById('book-details-page');
+        const newsDetailsPage = document.getElementById('news-details-page');
+        
+        function showPage(pageId) {
+            mainPage.classList.add('hidden');
+            storyCreatorPage.classList.add('hidden');
+            bookDetailsPage.classList.add('hidden');
+            newsDetailsPage.classList.add('hidden');
+            document.getElementById(pageId).classList.remove('hidden');
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
-            const ctaButton = document.getElementById('ctaButton');
-            const messageContainer = document.getElementById('messageContainer');
-            
-            ctaButton.addEventListener('click', () => {
-                // 메시지 컨테이너를 보여줍니다.
-                messageContainer.classList.remove('hidden');
-                
-                // 버튼 텍스트를 변경합니다.
-                ctaButton.textContent = "감사합니다!";
-                
-                // 버튼의 스타일을 변경합니다.
-                ctaButton.classList.remove('bg-gradient-to-r', 'from-blue-500', 'to-purple-600');
-                ctaButton.classList.add('bg-gray-400');
-            });
+            showPage('main-page');
         });
+
+        // Function to show book details
+        function showBookDetails(title, author, bgColor, description) {
+            document.getElementById('book-title').innerText = title;
+            document.getElementById('book-author').innerText = author;
+            document.getElementById('book-description').innerText = description;
+            
+            const bookImageDiv = document.getElementById('book-image');
+            bookImageDiv.className = `w-full h-80 rounded-lg shadow-lg flex items-center justify-center text-white text-3xl font-bold ${bgColor}`;
+            bookImageDiv.innerText = title;
+
+            showPage('book-details-page');
+        }
+
+        // Function to show news details
+        function showNewsDetails(title, date, content) {
+            document.getElementById('news-title').innerText = title;
+            document.getElementById('news-date').innerText = date;
+            document.getElementById('news-content').innerText = content;
+            showPage('news-details-page');
+        }
+
+        // Search functionality
+        function searchBook() {
+            const searchQuery = document.getElementById('search-input').value.trim();
+            const books = {
+                '구름빵': {author: '백희나', bgColor: 'bg-sky-500', description: '하늘을 나는 신비한 구름빵 이야기! 아이들의 상상력을 자극하는 따뜻한 그림책입니다.'},
+                '알사탕': {author: '백희나', bgColor: 'bg-rose-500', description: '외톨이 동동이에게 특별한 친구들을 만들어주는 신비한 알사탕 이야기. 마음의 소리를 들려주는 따뜻한 그림책입니다.'},
+                '달 샤베트': {author: '백희나', bgColor: 'bg-amber-500', description: '더운 여름, 녹아내린 달을 모아 만든 달콤한 샤베트 이야기. 지구 온난화에 대한 메시지를 담고 있는 상상력 넘치는 그림책입니다.'},
+                '연이와 버들 도령': {author: '미디어창비', bgColor: 'bg-teal-500', description: '한국의 전래동화를 바탕으로 한 아름다운 사랑 이야기. 섬세한 그림과 감동적인 스토리가 돋보이는 그림책입니다.'},
+                '팥죽 할머니와 호랑이': {author: '사계절', bgColor: 'bg-indigo-500', description: '꾀 많은 할머니와 어수룩한 호랑이의 흥미진진한 대결 이야기. 아이들에게 교훈을 주는 전통 그림책입니다.'},
+                '강아지똥': {author: '권정생', bgColor: 'bg-orange-500', description: '세상의 가장 하찮은 존재도 소중한 의미가 있다는 것을 알려주는 따뜻한 이야기. 많은 사람들에게 사랑받는 동화입니다.'}
+            };
+
+            if (books[searchQuery]) {
+                const book = books[searchQuery];
+                showBookDetails(searchQuery, book.author, book.bgColor, book.description);
+            } else {
+                const searchInput = document.getElementById('search-input');
+                searchInput.value = '';
+                searchInput.placeholder = '죄송해요. 찾는 책이 없어요. 다시 검색해보세요!';
+            }
+        }
+
+        // Drawing and Sticker logic
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        const brushSizeInput = document.getElementById('brushSize');
+        const stickerContainer = document.getElementById('sticker-container');
+
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let brushColor = '#FFFFFF';
+        let brushSize = 5;
+
+        function resizeCanvas() {
+            const parent = canvas.parentElement;
+            canvas.width = parent.clientWidth;
+            canvas.height = parent.clientHeight;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        function draw(e) {
+            if (!isDrawing) return;
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.strokeStyle = brushColor;
+            ctx.lineWidth = brushSize;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        });
+
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', () => isDrawing = false);
+        canvas.addEventListener('mouseout', () => isDrawing = false);
+
+        // Touch event handling for mobile
+        canvas.addEventListener('touchstart', (e) => {
+            isDrawing = true;
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            lastX = touch.clientX - rect.left;
+            lastY = touch.clientY - rect.top;
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (!isDrawing) return;
+            e.preventDefault(); // Prevent scrolling on canvas
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.strokeStyle = brushColor;
+            ctx.lineWidth = brushSize;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            [lastX, lastY] = [x, y];
+        }, { passive: false });
+        
+        canvas.addEventListener('touchend', () => isDrawing = false);
+
+        // Change color
+        function changeColor(color) {
+            brushColor = color;
+        }
+
+        // Change brush size
+        brushSizeInput.addEventListener('input', (e) => {
+            brushSize = e.target.value;
+        });
+
+        // Clear canvas
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            stickerContainer.innerHTML = ''; // Remove all stickers
+        }
+
+        // Add stickers
+        function addSticker(imgElement) {
+            const sticker = document.createElement('img');
+            sticker.src = imgElement.src;
+            sticker.className = 'absolute w-16 h-16 cursor-move';
+            sticker.style.left = '50%';
+            sticker.style.top = '50%';
+            sticker.style.transform = 'translate(-50%, -50%)';
+            stickerContainer.appendChild(sticker);
+
+            // Make sticker draggable
+            let isDragging = false;
+            let startX, startY, initialX, initialY;
+
+            sticker.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                initialX = sticker.offsetLeft;
+                initialY = sticker.offsetTop;
+                startX = e.clientX;
+                startY = e.clientY;
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                sticker.style.left = `${initialX + dx}px`;
+                sticker.style.top = `${initialY + dy}px`;
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            // Touch drag for stickers
+            sticker.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                initialX = sticker.offsetLeft;
+                initialY = sticker.offsetTop;
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            });
+
+            document.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                const dx = e.touches[0].clientX - startX;
+                const dy = e.touches[0].clientY - startY;
+                sticker.style.left = `${initialX + dx}px`;
+                sticker.style.top = `${initialY + dy}px`;
+            });
+
+            document.addEventListener('touchend', () => {
+                isDragging = false;
+            });
+        }
+
+        // Save image
+        function saveImage() {
+            // A temporary canvas to combine drawing and stickers
+            const combinedCanvas = document.createElement('canvas');
+            combinedCanvas.width = canvas.width;
+            combinedCanvas.height = canvas.height;
+            const combinedCtx = combinedCanvas.getContext('2d');
+            
+            // Draw the drawing canvas content first
+            combinedCtx.drawImage(canvas, 0, 0);
+
+            // Draw each sticker onto the combined canvas
+            const stickers = stickerContainer.querySelectorAll('.sticker-img');
+            stickers.forEach(sticker => {
+                const rect = sticker.getBoundingClientRect();
+                const containerRect = stickerContainer.getBoundingClientRect();
+                combinedCtx.drawImage(sticker, rect.left - containerRect.left, rect.top - containerRect.top, rect.width, rect.height);
+            });
+
+            // Create a download link for the combined image
+            const image = combinedCanvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = 'my-story.png';
+            link.href = image;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // 3D background animation with Three.js
+        window.onload = function() {
+            const container = document.getElementById('hero-canvas-container');
+            if (!container) return;
+
+            // Scene setup
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(0, 1, 1);
+            scene.add(directionalLight);
+
+            // Create shapes
+            const shapes = [];
+            const colors = [0xec4899, 0xf97316, 0x22d3ee, 0x8b5cf6, 0x38bdf8]; // Pink, Orange, Cyan, Violet, Light Blue
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const sphereGeometry = new THREE.SphereGeometry(0.7, 32, 32);
+
+            for (let i = 0; i < 20; i++) {
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                let mesh;
+                if (Math.random() > 0.5) {
+                    mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: color, roughness: 0.5 }));
+                } else {
+                    mesh = new THREE.Mesh(sphereGeometry, new THREE.MeshStandardMaterial({ color: color, roughness: 0.5 }));
+                }
+                
+                // Position shapes randomly
+                mesh.position.x = (Math.random() - 0.5) * 50;
+                mesh.position.y = (Math.random() - 0.5) * 50;
+                mesh.position.z = (Math.random() - 0.5) * 50;
+                
+                mesh.rotation.x = Math.random() * Math.PI;
+                mesh.rotation.y = Math.random() * Math.PI;
+
+                scene.add(mesh);
+                shapes.push(mesh);
+            }
+
+            camera.position.z = 10;
+
+            // Animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+
+                // Rotate and move shapes
+                shapes.forEach(shape => {
+                    shape.rotation.x += 0.005;
+                    shape.rotation.y += 0.005;
+                    shape.position.y += 0.01; // Move up
+                    if (shape.position.y > 25) {
+                        shape.position.y = -25; // Reset position when it goes out of view
+                    }
+                });
+
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            });
+            
+            // Add event listener for news cards
+            document.querySelectorAll('.news-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    const title = card.dataset.title;
+                    const date = card.dataset.date;
+                    const content = card.dataset.content;
+                    showNewsDetails(title, date, content);
+                });
+            });
+        };
     </script>
 </body>
 </html>
